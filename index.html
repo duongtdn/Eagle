@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset=utf-8>
+		<meta name="viewport" content="width=620">
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+
+
+		<style>
+			/* fix bootstrap issue that blur the canvas */
+			canvas{
+				box-sizing: content-box;
+			}
+		</style>
+
+		<script type="text/javascript" src="js/fabric.js"></script>
+		<script type="text/javascript" src="js/Eagle-Adapter.js"></script>
+		<script type="text/javascript" src="js/shape/cus-rect.js"></script>
+
+
+		<title>IB</title>
+	</head>
+
+	<body>
+		<div class="container">
+
+			<div class="toolbar control-align" style="margin-top:10px;">
+				<button type="button" class="btn btn-default" onclick="alignLeft()" > Left </button>
+				<button type="button" class="btn btn-default" onclick="alignCenter()" > Center </button>
+				<button type="button" class="btn btn-default" onclick="alignRight()" > Right </button>
+				<button type="button" class="btn btn-default" onclick="alignTop()" > Top </button>
+				<button type="button" class="btn btn-default" onclick="alignMiddle()" > Middle </button>
+				<button type="button" class="btn btn-default" onclick="alignBottom()" > Bottom </button>
+			</div>
+			<canvas id="cvs" style="margin-top:15px; margin-bottom:5px; border: 1px solid grey;"></canvas>
+
+		</div>
+
+		<script>
+
+			var canvas,
+			    cusRect;
+
+			function newCVS() {
+
+				canvas = new fabric.Canvas('cvs',{
+					width : 800,
+					height : 500
+				});
+
+				cusRect = new Eagle.Rect({
+					width: 200,
+					height: 150,
+					left : 100,
+					top : 100,
+					fill: '#ddd',
+					stroke: "#000",
+					fontSize : 20,
+					textFill : '#000',
+					//textAlign: 'middle center',
+					textHAlign : 'left',
+					textVAlign : 'bottom',
+					padLeft : 10,
+					padRight : 10,
+					padTop : 10,
+					padBottom : 10,
+					wrap : 'auto',
+					trimSpaceWhenWrap : true,
+					text : 'My custom rect\nand the second line'
+				});
+
+				var txt = new fabric.Text('My custom rect\n\nand the second line', {
+					left: 500,
+					top: 100,
+					fill: '#000',
+				//	stroke: "#000",
+					fontSize : 20,
+				});
+
+				canvas.add(cusRect);
+				canvas.add(txt);
+
+			}
+
+			function alignLeft () {
+				cusRect.set('textHAlign', 'left');
+				canvas.renderAll();
+			}
+
+			function alignCenter () {
+				cusRect.set('textHAlign', 'center');
+				canvas.renderAll();
+			}
+
+			function alignRight () {
+				cusRect.set('textHAlign', 'right');
+				canvas.renderAll();
+			}
+
+			function alignTop () {
+				cusRect.set('textVAlign', 'top');
+				canvas.renderAll();
+			}
+
+			function alignMiddle () {
+				cusRect.set('textVAlign', 'middle');
+				canvas.renderAll();
+			}
+
+			function alignBottom () {
+				cusRect.set('textVAlign', 'bottom');
+				canvas.renderAll();
+			}
+
+			window.onload = newCVS;
+
+		</script>
+
+	</body>
+</html>
