@@ -16,7 +16,9 @@
 
 		<script type="text/javascript" src="js/fabric.js"></script>
 		<script type="text/javascript" src="js/Eagle-Adapter.js"></script>
-		<script type="text/javascript" src="js/shape/cus-rect.js"></script>
+		<script type="text/javascript" src="js/util/class.util.js"></script>
+		<script type="text/javascript" src="js/mixin/text.mixin.js"></script>
+		<script type="text/javascript" src="js/shape/textbox.js"></script>
 
 
 		<title>IB</title>
@@ -49,7 +51,7 @@
 					height : 500
 				});
 
-				cusRect = new Eagle.Rect({
+				cusRect = new Eagle.Textbox({
 					width: 200,
 					height: 150,
 					left : 100,
@@ -69,6 +71,8 @@
 					trimSpaceWhenWrap : true,
 					text : 'My custom rect\nand the second line'
 				});
+
+				console.log (cusRect.type);
 
 				var txt = new fabric.Text('My custom rect\n\nand the second line', {
 					left: 500,
