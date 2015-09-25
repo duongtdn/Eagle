@@ -22,8 +22,6 @@
       PADBOTTOM = 0,
       AUTO = 'auto';
 
-  var DIRTY = 'dirty',
-      UPTODATE = 'upToDate';
 
     var stateProperties = fabric.Object.prototype.stateProperties.concat();
     stateProperties.push(
@@ -90,14 +88,6 @@
 
     _textHeight : 0,
 
-    // cached values
-    // wrap line only take place when resizing
-    // other renders caused by moving, rotating... does not require rewrapping
-    _cache : {
-      textHeight : DIRTY,
-      wrapTextLines : DIRTY
-    },
-
     _alignValidate : {
       h : ['left', 'center', 'right'],
       v : ['top', 'middle', 'bottom']
@@ -124,10 +114,6 @@
       this.textVAlign = alignHV.v || 'top';
       */
 
-      this.on ('modified', function () {
-        console.log ('fired');
-        this._cleanDirty ('wrapTextLines'); //cache is up to date after rewrap
-      })
     },
 
     toObject : function() {
@@ -153,17 +139,15 @@
 
       var properWidth = this.getWidth() - this._padWidth;
       // only wrap text if cache is dirty
-      if ( this._isDirty('wrapTextLines') ) {
-        this._wrapTextLines = this._wrapText (
-          ctx,
-          this._textLines,
-          properWidth
-        );
-        this._updateCache(
-          'textHeight',
-          this._getHeightOfText(this._wrapTextLines)
-        );
-      }
+
+      this._wrapTextLines = this._wrapText (
+        ctx,
+        this._textLines,
+        properWidth
+      );
+
+      this._textHeight = this._getHeightOfText(this._wrapTextLines);
+
       this._translateForTextAlign(ctx);
       this._renderTextFill(ctx, this._wrapTextLines);
 
@@ -198,10 +182,11 @@
       for ( var i = line.length; i > 0; ) {
 
         var ms = line.substr(0,i),
-            msWidth = this._getLineWidth(ctx,ms);
+            msWidth = this._getWidthOfLine(ctx,ms);
         if ( msWidth <  width ) {
-          var rs = line.substr(i);
-          splittedLine.push ( {width : msWidth, text : ms} );
+          var msHeight = this._getHeightOfLine(ctx,ms),
+              rs = line.substr(i);
+          splittedLine.push ( {height: msHeight, width : msWidth, text : ms} );
           if (rs !== "") {
             var newWrap = this._wrapLine (ctx, rs, width);
             Array.prototype.push.apply(splittedLine, newWrap);
@@ -230,15 +215,21 @@
           if ( wrapLine.length !== 0 ) {
             Array.prototype.push.apply(wrapText, wrapLine);
           } else {
-            wrapText.push( {width : 0, text : ''} );
-          }
+            wrapText.push({
+              height: this._heighOfEmptyLine(),
+              width : 0,
+              text : ''
+            });
+          } // end if
         } // end for i
       } else {
         // no wrap
         for (var i=0, len=text.length; i<len; i++) {
-          wrapText.push(
-            { width : this._getLineWidth(ctx,text[i]), text : text[i] }
-          );
+          wrapText.push({
+            height : this._getHeightOfLine(ctx,text[i]),
+            width : this._getWidthOfLine(ctx,text[i]),
+            text : text[i]
+          });
         }
       }
       return wrapText;
@@ -249,7 +240,7 @@
       var lineHeights = 0;  // point to first line
       for (var i=0, len=text.length; i<len; i++) {
           // calculate height of line
-          var heightOfLine = this._getHeightOfLine(),
+          var heightOfLine = text[i].height,
               maxHeight = heightOfLine / this.lineHeight;
           // call subroutine to render a line
           this._renderTextLine('fillText',
@@ -291,13 +282,19 @@
                   -this.getHeight() / 2 + this.padTop;
     },
 
-    _getHeightOfLine: function() {
+    _getHeightOfLine: function(ctx, line) {
       // ISSUE @18Sep2015 : rich text may have different style in each line
       // therefore line height must be count on each line
       return this.fontSize * this._fontSizeMult * this.lineHeight;
     },
 
-    _getLineWidth: function(ctx, line) {
+    _heighOfEmptyLine: function() {
+      // ISSUE @18Sep2015 : rich text may have different style in each line
+      // therefore line height must be count on each line
+      return this.fontSize * this._fontSizeMult * this.lineHeight;
+    },
+
+    _getWidthOfLine: function(ctx, line) {
       // low performance solution
       // line width should be cached somehow
       // ISSUE @18Sep2015 : rich text format cause wrong measurement, since each
@@ -360,32 +357,6 @@
       return alignHV;
     },
     */
-
-    _updateCache: function (name, val) {
-      if (this._cache[name]) {
-          this['_' + name] = val;
-          this._cache[name] = DIRTY;
-      }
-    },
-
-    _isDirty: function(name) {
-      var dirty = this._cache[name] === DIRTY ? true : false;
-      console.log (name + ' is ' + dirty);
-      return this._cache[name] === DIRTY ? true : false;
-    },
-
-    _cleanDirty: function(name) {
-      if (this._cache[name]) {
-        this._cache[name] = UPTODATE;
-      }
-    },
-
-    _setDirty: function(name) {
-      if (this._cache[name]) {
-        this._cache[name] = DIRTY;
-      }
-      console.log ('name : ' + this._cache[name]);
-    },
 
     null: function() {}
 
