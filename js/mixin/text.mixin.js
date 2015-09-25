@@ -1,9 +1,11 @@
 /*------------------------------------------------------------------------------
 
   ----------------------------------------------------------------------------*/
-"use strict";
+
 
 (function() {
+
+  "use strict";
 
   var FONTSIZE = 20,
       FONTWEIGHT = 'normal',    // bold, normal, 400, 600...
@@ -19,6 +21,22 @@
       PADTOP = 0,
       PADBOTTOM = 0,
       AUTO = 'auto';
+
+  var DIRTY = 'dirty',
+      UPTODATE = 'upToDate';
+
+    var stateProperties = fabric.Object.prototype.stateProperties.concat();
+    stateProperties.push(
+      'fontFamily',
+      'fontWeight',
+      'fontSize',
+      'text',
+      'textDecoration',
+      'textAlign',
+      'fontStyle',
+      'lineHeight',
+      'textBackgroundColor'
+    );
 
 
   Eagle.Embed.Text = {
@@ -58,6 +76,8 @@
 
     trimSpaceWhenWrap : true,
 
+    stateProperties : stateProperties,
+
     // private property
 
     _reNewline : /\r?\n/,
@@ -66,9 +86,16 @@
 
     _fontSizeFraction: 0.25,
 
-    // cached value
+    _wrapTextLines : '',
+
+    _textHeight : 0,
+
+    // cached values
+    // wrap line only take place when resizing
+    // other renders caused by moving, rotating... does not require rewrapping
     _cache : {
-      textHeight : 0
+      textHeight : DIRTY,
+      wrapTextLines : DIRTY
     },
 
     _alignValidate : {
@@ -96,6 +123,11 @@
       this.textHAlign = alignHV.h || 'left';
       this.textVAlign = alignHV.v || 'top';
       */
+
+      this.on ('modified', function () {
+        console.log ('fired');
+        this._cleanDirty ('wrapTextLines'); //cache is up to date after rewrap
+      })
     },
 
     toObject : function() {
@@ -120,12 +152,20 @@
       this._setTextStyles(ctx);
 
       var properWidth = this.getWidth() - this._padWidth;
-      var wrapText = this._wrapText (ctx, this._textLines, properWidth);
-      this._updateCache( 'textHeight', this._getHeightOfText(wrapText) );
-
+      // only wrap text if cache is dirty
+      if ( this._isDirty('wrapTextLines') ) {
+        this._wrapTextLines = this._wrapText (
+          ctx,
+          this._textLines,
+          properWidth
+        );
+        this._updateCache(
+          'textHeight',
+          this._getHeightOfText(this._wrapTextLines)
+        );
+      }
       this._translateForTextAlign(ctx);
-
-      this._renderTextFill(ctx, wrapText);
+      this._renderTextFill(ctx, this._wrapTextLines);
 
     },
 
@@ -137,7 +177,7 @@
             (this.getWidth() / 2) :
             this.getWidth();
       }
-      var offsetHeight = this.getHeight() - this._cache.textHeight;
+      var offsetHeight = this.getHeight() - this._textHeight;
       if (this.textVAlign !== 'top') {
         yOffset = this.textVAlign === 'middle' ?
           offsetHeight / 2:
@@ -152,48 +192,56 @@
       if (this.trimSpaceWhenWrap) {
         line = line.trim();
       }
+
       var splittedLine = [];
+
       for ( var i = line.length; i > 0; ) {
-        var ms = line.substr(0,i);
-        if ( this._getLineWidth(ctx,ms) <  width ) {
+
+        var ms = line.substr(0,i),
+            msWidth = this._getLineWidth(ctx,ms);
+        if ( msWidth <  width ) {
           var rs = line.substr(i);
-          splittedLine.push(ms);
+          splittedLine.push ( {width : msWidth, text : ms} );
           if (rs !== "") {
             var newWrap = this._wrapLine (ctx, rs, width);
             Array.prototype.push.apply(splittedLine, newWrap);
           } // end if
           return splittedLine;
         } // end if
+
         // next i depends on wrap option
         // 'auto' and 'word' cause it to sweep line by word
         // while 'char' cause it to sweep line by character
         // if width is smaller than a word, wrap by character automatically
         var n = ms.lastIndexOf(' ');
         i = (this.wrap === 'char' || n <= 0) ? i-1 : n;
+
       } // end for i
+
       return splittedLine;
     },
 
-    _sweepStr: function(str,i) {
-
-    },
-
     _wrapText: function (ctx, text, width) {
+      var wrapText = [];
       if ( this.wrap !== 'none' ) {
-        var wrapText = [];
         for (var i=0, len=text.length; i<len; i++) {
           var wrapLine =   this._wrapLine(ctx, text[i], width);
           // fix issue of multiple newline
           if ( wrapLine.length !== 0 ) {
             Array.prototype.push.apply(wrapText, wrapLine);
           } else {
-            wrapText.push('');
+            wrapText.push( {width : 0, text : ''} );
           }
         } // end for i
-        return wrapText;
       } else {
-        return text;
+        // no wrap
+        for (var i=0, len=text.length; i<len; i++) {
+          wrapText.push(
+            { width : this._getLineWidth(ctx,text[i]), text : text[i] }
+          );
+        }
       }
+      return wrapText;
     },
 
     _renderTextFill: function(ctx, text) {
@@ -206,7 +254,7 @@
           // call subroutine to render a line
           this._renderTextLine('fillText',
             ctx,
-            text[i],
+            text[i].text,
             this._getLeftOffset(),
             this._getTopOffset() + lineHeights + maxHeight,
             i
@@ -262,6 +310,7 @@
       return ctx.measureText(c).width;
     },
 
+    // return the height of full text (accumulated of all lines height)
     _getHeightOfText: function(text) {
       // ISSUE @18Sep2015 : rich text may have different style in each line
       // therefore text height must be accumlate of each line
@@ -313,7 +362,29 @@
     */
 
     _updateCache: function (name, val) {
-      this._cache[name] = val;
+      if (this._cache[name]) {
+          this['_' + name] = val;
+          this._cache[name] = DIRTY;
+      }
+    },
+
+    _isDirty: function(name) {
+      var dirty = this._cache[name] === DIRTY ? true : false;
+      console.log (name + ' is ' + dirty);
+      return this._cache[name] === DIRTY ? true : false;
+    },
+
+    _cleanDirty: function(name) {
+      if (this._cache[name]) {
+        this._cache[name] = UPTODATE;
+      }
+    },
+
+    _setDirty: function(name) {
+      if (this._cache[name]) {
+        this._cache[name] = DIRTY;
+      }
+      console.log ('name : ' + this._cache[name]);
     },
 
     null: function() {}
