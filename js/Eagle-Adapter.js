@@ -30,6 +30,8 @@
    - ISSUE @18Sep2015 : rich text format cause wrong measurement, since each
      char may have each style. Measure need to accumulate every char ->
      may produce greate negative impact to performance
+   - ISSUE @28Sep2015 : enable trimSpaceWhenWrap cause worng index of character
+     in line 
 
    ---------------------------------------------------------------------------*/
 "use strict";

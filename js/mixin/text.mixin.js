@@ -134,7 +134,7 @@
 
     _renderText: function(ctx,text) {
 
-      this._setTextStyles(ctx);
+      //this._setTextStyles(ctx);
 
       var properWidth = this.getWidth() - this.getPadWidth();
       // only wrap text if cache is dirty
@@ -165,11 +165,13 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
     _translateForTextAlign: function(ctx) {
       var xOffset = 0,
           yOffset = 0;
+      /* will manually align left/right/center when rendering each line
       if (this.textHAlign !== 'left' && this.textHAlign !== 'justify') {
         xOffset = this.textHAlign === 'center' ?
             (this.getWidth() / 2) :
             this.getWidth();
       }
+      */
       var offsetHeight = this.getHeight() - this._textHeight;
       if (this.textVAlign !== 'top') {
         yOffset = this.textVAlign === 'middle' ?
@@ -181,7 +183,7 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
 
     },
 
-    _breakLineByStyle: function(line, lineIndex, subIndex) {
+    _breakLineByStyle: function(ctx, line, lineIndex, subIndex) {
       var txt = [],
           chars = line[0],
           prevStyle = this.getCharStyle(lineIndex, subIndex, 0);
@@ -193,17 +195,19 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
             txt.push({
               str : chars,
               style: prevStyle,
+              height : this._getHeightOfChars(ctx, chars, prevStyle),
               width: this._getWidthOfChars(ctx, chars, prevStyle)
             });
             chars = '';
             prevStyle = thisStyle;
           }
           chars += line[i];
-        }
+        } // end for i
       } else {
         txt.push({
           str : line,
-          style: prevStyle
+          style: prevStyle,
+          height : this._getHeightOfChars(ctx, line, prevStyle),
           width: this._getWidthOfChars(ctx, line, prevStyle)
         });
       }
@@ -250,7 +254,13 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
 
       for ( var i = line.length; i > 0; ) {
 
-        var ms = this._breakLineByStyle(line.substr(0,i), lineIndex, subIndex),
+        var wline = line.substr(0,i),
+            ms = this._breakLineByStyle(
+              ctx,
+              wline,
+              lineIndex,
+              subIndex
+            ),
             msWidth = this._getWidthOfLine(ctx,ms);
         if ( msWidth <  width ) {
           var msHeight = this._getHeightOfLine(ctx,ms),
@@ -274,7 +284,7 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
         // 'auto' and 'word' cause it to sweep line by word
         // while 'char' cause it to sweep line by character
         // if width is smaller than a word, wrap by character automatically
-        var n = ms.lastIndexOf(' ');
+        var n = wline.lastIndexOf(' ');
         i = (this.wrap === 'char' || n <= 0) ? i-1 : n;
 
       } // end for i
@@ -291,18 +301,24 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
           if ( wrapLine.length !== 0 ) {
             Array.prototype.push.apply(wrapText, wrapLine);
           } else {
+            var height = this._heighOfEmptyLine()
             wrapText.push({
-              height: this._heighOfEmptyLine(),
+              height: height,
               width : 0,
               index : i + '.0',
-              text : {str : '', style : null}
+              text : {
+                str : '',
+                style : null,
+                height : height,
+                width : 0
+              }
             });
           } // end if
         } // end for i
       } else {
         // no wrap
         for (var i=0, len=text.length; i<len; i++) {
-          var text = this._breakLineByStyle(text[i], i, 0);
+          var text = this._breakLineByStyle(ctx, text[i], i, 0);
           wrapText.push({
             height : this._getHeightOfLine(ctx,text[i]),
             width : this._getWidthOfLine(ctx,text[i]),
@@ -324,46 +340,56 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
           // call subroutine to render a line
           this._renderTextLine('fillText',
             ctx,
-            text[i].text,
+            text[i],
             this._getLeftOffset(),
-            this._getTopOffset() + lineHeights + maxHeight,
-            text[i].index
+            this._getTopOffset() + lineHeights + maxHeight
           );
           // point to next line
           lineHeights += heightOfLine;
       } // end for i
     },
 
-    _renderTextLine: function(method, ctx, line, left, top, index) {
+    _renderTextLine: function(method, ctx, line, left, top) {
       // lift the line by quarter of fontSize
       top -= this.fontSize * this._fontSizeFraction;
-
+      var text = line.text;
       if ( (!this.styles || this.styles === null) &&
            (this.textHAlign != 'justify') ) {
         // not rich text format or align justify, draw a text line directly
-        ctx[method](line, left, top);
+        ctx[method](text[0].str, left, top);
       } else {
         // rich text format or align justify requires draw each line
-        for (var i = 0, len = line.length; i < len; i++) {
-          var char = line[i];
-          // calculate the left and right of char
+        // calculate the position of char
+        if (this.textHAlign !== 'left' && this.textHAlign !== 'justify') {
+          left += this.textHAlign === 'center' ?
+                      (this.getWidth() - line.width) / 2 :
+                      (this.getWidth() - line.width);
+        }
+        this.skipTextAlign = true;
+        for (var i = 0, len = text.length; i < len; i++) {
+          var char = text[i],
+              width = text[i].width;
 
           // render char (ctx will be translated automatically after renderring)
-          this._renderTextChar (
+          this._renderTextChars (
             method,
             ctx,
             char,
             left,
-            top,
-            index
+            top
           );
+
+          left += width;
         }   // end for i
       } // end if
 
     },
 
-    _renderTextChar: function(method, ctx, char, left, top, index) {
-
+    _renderTextChars: function(method, ctx, char, left, top, index) {
+      // apply style
+      this._setTextStyles(ctx,char.style);
+      // render
+      ctx[method](char.str, left, top);
     },
 
     // supported subroutines
@@ -396,7 +422,12 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
       return this.fontSize * this._fontSizeMult * this.lineHeight;
     },
 
+    _getHeightOfChars: function(ctx, chars, style) {
+      return this.fontSize * this._fontSizeMult * this.lineHeight;
+    },
+
     _getWidthOfChars: function(ctx, chars, style) {
+      this._setTextStyles(ctx, style);
       return ctx.measureText(chars).width;
     },
 
@@ -409,7 +440,7 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
       if ( Array.isArray(line) ) {
         var width = 0;
         for (var i = 0, len = line.length; i < len; i++) {
-          width += ctx.measureText(line[i].str).width;
+          width += line[i].width;
         }
       } else {
         width = ctx.measureText(line).width;
@@ -417,10 +448,6 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
 
       return width;
 
-    },
-
-    _getCharWidth: function(ctx,c) {
-      return ctx.measureText(c).width;
     },
 
     // return the height of full text (accumulated of all lines height)
@@ -435,24 +462,24 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
     },
 
     // set proper style for ctx to draw
-    _setTextStyles: function(ctx) {
+    _setTextStyles: function(ctx, style) {
       ctx.textBaseline = 'alphabetic';
       if (!this.skipTextAlign) {
         ctx.textAlign = this.textHAlign;
       }
-      ctx.font = this._getFontDeclaration();
-      ctx.fillStyle = this.textFill;
+      ctx.font = this._getFontDeclaration(style);
+      ctx.fillStyle = style.textFill;
     },
 
     // form a font declaration according to user defined fontSize, fontFamily,
     // fontStyle...
-    _getFontDeclaration: function() {
+    _getFontDeclaration: function(style) {
       return [
         // node-canvas needs "weight style", while browsers need "style weight"
-        (fabric.isLikelyNode ? this.fontWeight : this.fontStyle),
-        (fabric.isLikelyNode ? this.fontStyle : this.fontWeight),
-        this.fontSize + 'px',
-        (fabric.isLikelyNode ? ('"' + this.fontFamily + '"') : this.fontFamily)
+        (fabric.isLikelyNode? style.fontWeight : style.fontStyle),
+        (fabric.isLikelyNode? style.fontStyle : style.fontWeight),
+        style.fontSize + 'px',
+        (fabric.isLikelyNode? ('"' + style.fontFamily + '"') : style.fontFamily)
       ].join(' ');
     },
 
