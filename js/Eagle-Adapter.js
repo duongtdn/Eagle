@@ -11,9 +11,12 @@
 
    REMAINING
    - text direction
+   - align justify
+   - strokeText & strokeTextWidth
    - changelist to be updated (ex: this._padWidth need to update when padLeft
      or padRight changed)
    - performance improvement (using cache...)
+   - wapping cause lots of Array creation and deletion -> need check.
    - renderChar function
    - support rich format
    - trim and push.appy x browser support

@@ -103,7 +103,6 @@
 
       // private property
       this._textLines = this.text.split(this._reNewline);
-      this._padWidth = this.padLeft + this.padRight;
 
       // deprecation, use textHAlign and textVAlign instead
       /*
@@ -137,7 +136,7 @@
 
       this._setTextStyles(ctx);
 
-      var properWidth = this.getWidth() - this._padWidth;
+      var properWidth = this.getWidth() - this.getPadWidth();
       // only wrap text if cache is dirty
 
       this._wrapTextLines = this._wrapText (
@@ -172,7 +171,7 @@
 
     },
 
-    _wrapLine: function(ctx, line, width) {
+    _wrapLine: function(ctx, line, width, lineIndex, subIndex) {
       if (this.trimSpaceWhenWrap) {
         line = line.trim();
       }
@@ -185,10 +184,17 @@
             msWidth = this._getWidthOfLine(ctx,ms);
         if ( msWidth <  width ) {
           var msHeight = this._getHeightOfLine(ctx,ms),
+              index = lineIndex + '.' + subIndex,
               rs = line.substr(i);
-          splittedLine.push ( {height: msHeight, width : msWidth, text : ms} );
+          splittedLine.push ({
+            height: msHeight,
+            width : msWidth,
+            index : index,
+            text : ms
+          });
           if (rs !== "") {
-            var newWrap = this._wrapLine (ctx, rs, width);
+            subIndex++;
+            var newWrap = this._wrapLine (ctx, rs, width, lineIndex, subIndex);
             Array.prototype.push.apply(splittedLine, newWrap);
           } // end if
           return splittedLine;
@@ -210,7 +216,7 @@
       var wrapText = [];
       if ( this.wrap !== 'none' ) {
         for (var i=0, len=text.length; i<len; i++) {
-          var wrapLine =   this._wrapLine(ctx, text[i], width);
+          var wrapLine =   this._wrapLine(ctx, text[i], width, i, 0);
           // fix issue of multiple newline
           if ( wrapLine.length !== 0 ) {
             Array.prototype.push.apply(wrapText, wrapLine);
@@ -248,19 +254,41 @@
             text[i].text,
             this._getLeftOffset(),
             this._getTopOffset() + lineHeights + maxHeight,
-            i
+            text[i].index
           );
           // point to next line
           lineHeights += heightOfLine;
       } // end for i
     },
 
-    _renderTextLine: function(method, ctx, line, left, top, lineIndex) {
+    _renderTextLine: function(method, ctx, line, left, top, index) {
       // lift the line by quarter of fontSize
       top -= this.fontSize * this._fontSizeFraction;
-      ctx.fillStyle = this.textFill;
 
-      ctx[method](line, left, top);
+      if ( (!this.styles || this.styles.length==0) &&
+           (this.textHAlign != 'justify') ) {
+        // not rich text format or align justify, draw a text line directly
+        ctx[method](line, left, top);
+      } else {
+        // rich text format or align justify requires draw each line
+        for (var i = 0, len = line.length; i < len; i++) {
+          // calculate the left and right of char
+
+          // render char
+          this._renderTextChar (
+            method,
+            ctx,
+            len[i],
+            left,
+            top,
+            index
+          );
+        }   // end for i
+      } // end if
+
+    },
+
+    _renderTextChar: function(method, ctx, char, left, top, index) {
 
     },
 
@@ -314,6 +342,10 @@
       return this._getHeightOfLine() * text.length;
     },
 
+    getPadWidth: function() {
+      return this.padLeft + this.padRight;
+    },
+
     // set proper style for ctx to draw
     _setTextStyles: function(ctx) {
       ctx.textBaseline = 'alphabetic';
@@ -321,6 +353,7 @@
         ctx.textAlign = this.textHAlign;
       }
       ctx.font = this._getFontDeclaration();
+      ctx.fillStyle = this.textFill;
     },
 
     // form a font declaration according to user defined fontSize, fontFamily,
@@ -335,6 +368,8 @@
       ].join(' ');
     },
 
+    // deprecation, function used for all text align processing method
+    /*
     _searchDict : function (dict, list) {
       var item;
 
@@ -346,7 +381,7 @@
       }
       return item;
     },
-
+    */
     // deprecation, use textHAlign and textVAlign instead
     /*
     _getAlignment : function (textAlign) {

@@ -122,16 +122,36 @@
 					padBottom : 10,
 					wrap : 'auto',
 					trimSpaceWhenWrap : true,
-					text : 'My custom rect\nand the second line'
+					text : 'My custom rect\nand the second line',
+					styles: {
+						0 : {
+							3 : {fill : 'red', fontSize : 30},
+							4 : {fill : 'red', fontSize : 30},
+							5 : {fill : 'red', fontSize : 30},
+							6 : {fill : 'red', fontSize : 30},
+							7 : {fill : 'red', fontSize : 30},
+							8 : {fill : 'red', fontSize : 30}
+						}
+					}
 				});
 
 
-				var txt = new fabric.Text('My custom rect\n\nand the second line', {
+				var txt = new fabric.IText('My custom rect\n\nand the second line', {
 					left: 500,
 					top: 100,
 					fill: '#000',
 				//	stroke: "#000",
 					fontSize : 20,
+					styles: {
+						0 : {
+							3 : {fill : 'red', fontSize : 30},
+							4 : {fill : 'red', fontSize : 30},
+							5 : {fill : 'red', fontSize : 30},
+							6 : {fill : 'red', fontSize : 30},
+							7 : {fill : 'red', fontSize : 30},
+							8 : {fill : 'red', fontSize : 30}
+						}
+					}
 				});
 
 				canvas.add(cusRect);
