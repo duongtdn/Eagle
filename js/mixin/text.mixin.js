@@ -145,6 +145,16 @@
         properWidth
       );
 
+console.log ('TEXT -----------------');
+console.log (this._wrapTextLines);
+for (var i=0; i < this._wrapTextLines.length; i++) {
+  var line = this._wrapTextLines[i];
+  console.log (line.index + ' : ');
+  for (var j = 0; j < line.text.length; j++) {
+      console.log ('    ' + line.text[j].str + ' /' + line.text[j].style.textFill);
+  }
+}
+
       this._textHeight = this._getHeightOfText(this._wrapTextLines);
 
       this._translateForTextAlign(ctx);
@@ -171,6 +181,66 @@
 
     },
 
+    _breakLineByStyle: function(line, lineIndex, subIndex) {
+      var txt = [],
+          chars = line[0],
+          prevStyle = this.getCharStyle(lineIndex, subIndex, 0);
+      if (this.styles && this.styles !== null) {
+        for (var i = 1, len = line.length; i <= len; i++) {
+          var thisStyle = this.getCharStyle(lineIndex, subIndex, i);
+          if ( this._hasStyleChanged (prevStyle,thisStyle) || i===len ) {
+            // break line
+            txt.push({
+              str : chars,
+              style: prevStyle,
+              width: this._getWidthOfChars(ctx, chars, prevStyle)
+            });
+            chars = '';
+            prevStyle = thisStyle;
+          }
+          chars += line[i];
+        }
+      } else {
+        txt.push({
+          str : line,
+          style: prevStyle
+          width: this._getWidthOfChars(ctx, line, prevStyle)
+        });
+      }
+      return txt;
+    },
+
+    getCharStyle: function (lineIndex, subIndex, charIndex) {
+      var absIndex = subIndex + charIndex,
+          style = this.styles[lineIndex] && this.styles[lineIndex][absIndex];
+
+      return {
+        fontSize: style && style.fontSize || this.fontSize,
+        textFill: style && style.textFill || this.textFill,
+        textBackgroundColor: style && style.textBackgroundColor || this.textBackgroundColor,
+        textDecoration: style && style.textDecoration || this.textDecoration,
+        fontFamily: style && style.fontFamily || this.fontFamily,
+        fontWeight: style && style.fontWeight || this.fontWeight,
+        fontStyle: style && style.fontStyle || this.fontStyle,
+        textStroke: style && style.textStroke || this.textStroke,
+        textStrokeWidth: style && style.textStrokeWidth || this.textStrokeWidth
+      };
+
+    },
+
+    _hasStyleChanged: function(prevStyle, thisStyle) {
+      return (prevStyle.textFill !== thisStyle.textFill ||
+              prevStyle.fontSize !== thisStyle.fontSize ||
+              prevStyle.textBackgroundColor !== thisStyle.textBackgroundColor ||
+              prevStyle.textDecoration !== thisStyle.textDecoration ||
+              prevStyle.fontFamily !== thisStyle.fontFamily ||
+              prevStyle.fontWeight !== thisStyle.fontWeight ||
+              prevStyle.fontStyle !== thisStyle.fontStyle ||
+              prevStyle.textStroke !== thisStyle.textStroke ||
+              prevStyle.textStrokeWidth !== thisStyle.textStrokeWidth
+      );
+    },
+
     _wrapLine: function(ctx, line, width, lineIndex, subIndex) {
       if (this.trimSpaceWhenWrap) {
         line = line.trim();
@@ -180,7 +250,7 @@
 
       for ( var i = line.length; i > 0; ) {
 
-        var ms = line.substr(0,i),
+        var ms = this._breakLineByStyle(line.substr(0,i), lineIndex, subIndex),
             msWidth = this._getWidthOfLine(ctx,ms);
         if ( msWidth <  width ) {
           var msHeight = this._getHeightOfLine(ctx,ms),
@@ -193,7 +263,7 @@
             text : ms
           });
           if (rs !== "") {
-            subIndex++;
+            subIndex += i;
             var newWrap = this._wrapLine (ctx, rs, width, lineIndex, subIndex);
             Array.prototype.push.apply(splittedLine, newWrap);
           } // end if
@@ -224,17 +294,20 @@
             wrapText.push({
               height: this._heighOfEmptyLine(),
               width : 0,
-              text : ''
+              index : i + '.0',
+              text : {str : '', style : null}
             });
           } // end if
         } // end for i
       } else {
         // no wrap
         for (var i=0, len=text.length; i<len; i++) {
+          var text = this._breakLineByStyle(text[i], i, 0);
           wrapText.push({
             height : this._getHeightOfLine(ctx,text[i]),
             width : this._getWidthOfLine(ctx,text[i]),
-            text : text[i]
+            index : i + '.0',
+            text : text
           });
         }
       }
@@ -265,20 +338,21 @@
       // lift the line by quarter of fontSize
       top -= this.fontSize * this._fontSizeFraction;
 
-      if ( (!this.styles || this.styles.length==0) &&
+      if ( (!this.styles || this.styles === null) &&
            (this.textHAlign != 'justify') ) {
         // not rich text format or align justify, draw a text line directly
         ctx[method](line, left, top);
       } else {
         // rich text format or align justify requires draw each line
         for (var i = 0, len = line.length; i < len; i++) {
+          var char = line[i];
           // calculate the left and right of char
 
-          // render char
+          // render char (ctx will be translated automatically after renderring)
           this._renderTextChar (
             method,
             ctx,
-            len[i],
+            char,
             left,
             top,
             index
@@ -322,13 +396,27 @@
       return this.fontSize * this._fontSizeMult * this.lineHeight;
     },
 
+    _getWidthOfChars: function(ctx, chars, style) {
+      return ctx.measureText(chars).width;
+    },
+
     _getWidthOfLine: function(ctx, line) {
       // low performance solution
       // line width should be cached somehow
       // ISSUE @18Sep2015 : rich text format cause wrong measurement, since each
       // char may have each style. Measure need to accumulate every char ->
       // may produce greate negative impact to performance
-      return ctx.measureText(line).width;
+      if ( Array.isArray(line) ) {
+        var width = 0;
+        for (var i = 0, len = line.length; i < len; i++) {
+          width += ctx.measureText(line[i].str).width;
+        }
+      } else {
+        width = ctx.measureText(line).width;
+      }
+
+      return width;
+
     },
 
     _getCharWidth: function(ctx,c) {
