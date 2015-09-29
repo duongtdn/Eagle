@@ -84,7 +84,7 @@
 
     _fontSizeFraction: 0.25,
 
-    _wrapTextLines : '',
+    _wrappedText : '',
 
     _textHeight : 0,
 
@@ -137,28 +137,29 @@
       //this._setTextStyles(ctx);
 
       var properWidth = this.getWidth() - this.getPadWidth();
-      // only wrap text if cache is dirty
 
-      this._wrapTextLines = this._wrapText (
+      // only wrap text if cache is dirty
+      // i.e. catch this one for performance improve
+      this._wrappedText = this._wrapText (
         ctx,
         this._textLines,
         properWidth
       );
 
-console.log ('TEXT -----------------');
-console.log (this._wrapTextLines);
-for (var i=0; i < this._wrapTextLines.length; i++) {
-  var line = this._wrapTextLines[i];
-  console.log (line.index + ' : ');
-  for (var j = 0; j < line.text.length; j++) {
-      console.log ('    ' + line.text[j].str + ' /' + line.text[j].style.textFill);
-  }
-}
+// console.log ('TEXT -----------------');
+// console.log (this._wrappedText);
+// for (var i=0; i < this._wrappedText.length; i++) {
+//   var line = this._wrappedText[i];
+//   console.log (line.index + ' : ');
+//   for (var j = 0; j < line.text.length; j++) {
+//       console.log ('    ' + line.text[j].str + ' /' + line.text[j].style.textFill);
+//   }
+// }
 
-      this._textHeight = this._getHeightOfText(this._wrapTextLines);
+      this._textHeight = this._getHeightOfText(this._wrappedText);
 
       this._translateForTextAlign(ctx);
-      this._renderTextFill(ctx, this._wrapTextLines);
+      this._renderTextFill(ctx, this._wrappedText);
 
     },
 
@@ -216,7 +217,8 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
 
     getCharStyle: function (lineIndex, subIndex, charIndex) {
       var absIndex = subIndex + charIndex,
-          style = this.styles[lineIndex] && this.styles[lineIndex][absIndex];
+          style = this.styles &&
+                  this.styles[lineIndex] && this.styles[lineIndex][absIndex];
 
       return {
         fontSize: style && style.fontSize || this.fontSize,
@@ -246,11 +248,15 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
     },
 
     _wrapLine: function(ctx, line, width, lineIndex, subIndex) {
+
       if (this.trimSpaceWhenWrap) {
+        // count number of whitespace before string and adjust subindex before
+        // trim left space
+        subIndex += line.replace(/^(\s*).*$/,"$1").length;
         line = line.trim();
       }
 
-      var splittedLine = [];
+      var wrappedLine = [];
 
       for ( var i = line.length; i > 0; ) {
 
@@ -266,7 +272,7 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
           var msHeight = this._getHeightOfLine(ctx,ms),
               index = lineIndex + '.' + subIndex,
               rs = line.substr(i);
-          splittedLine.push ({
+          wrappedLine.push ({
             height: msHeight,
             width : msWidth,
             index : index,
@@ -275,9 +281,9 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
           if (rs !== "") {
             subIndex += i;
             var newWrap = this._wrapLine (ctx, rs, width, lineIndex, subIndex);
-            Array.prototype.push.apply(splittedLine, newWrap);
+            Array.prototype.push.apply(wrappedLine, newWrap);
           } // end if
-          return splittedLine;
+          return wrappedLine;
         } // end if
 
         // next i depends on wrap option
@@ -289,7 +295,7 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
 
       } // end for i
 
-      return splittedLine;
+      return wrappedLine;
     },
 
     _wrapText: function (ctx, text, width) {
@@ -355,6 +361,12 @@ for (var i=0; i < this._wrapTextLines.length; i++) {
       var text = line.text;
       if ( (!this.styles || this.styles === null) &&
            (this.textHAlign != 'justify') ) {
+        // align
+        if (this.textHAlign !== 'left' && this.textHAlign !== 'justify') {
+          left += this.textHAlign === 'center' ?
+            (this.getWidth() / 2) :
+            this.getWidth();
+       }
         // not rich text format or align justify, draw a text line directly
         ctx[method](text[0].str, left, top);
       } else {

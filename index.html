@@ -34,12 +34,12 @@
 			</div>
 
 			<div class="toolbar control-align" style="margin-top:10px;">
-				<button type="button" class="btn btn-default" onclick="alignLeft()" > Left </button>
-				<button type="button" class="btn btn-default" onclick="alignCenter()" > Center </button>
-				<button type="button" class="btn btn-default" onclick="alignRight()" > Right </button>
-				<button type="button" class="btn btn-default" onclick="alignTop()" > Top </button>
-				<button type="button" class="btn btn-default" onclick="alignMiddle()" > Middle </button>
-				<button type="button" class="btn btn-default" onclick="alignBottom()" > Bottom </button>
+				<button type="button" class="btn btn-default" onclick="change('textHAlign','left')" > Left </button>
+				<button type="button" class="btn btn-default" onclick="change('textHAlign','center')" > Center </button>
+				<button type="button" class="btn btn-default" onclick="change('textHAlign','right')" > Right </button>
+				<button type="button" class="btn btn-default" onclick="change('textVAlign','top')" > Top </button>
+				<button type="button" class="btn btn-default" onclick="change('textVAlign','middle')" > Middle </button>
+				<button type="button" class="btn btn-default" onclick="change('textVAlign','bottom')" > Bottom </button>
 			</div>
 			<canvas id="cvs" style="margin-top:15px; margin-bottom:5px; border: 1px solid grey;"></canvas>
 
@@ -154,39 +154,19 @@
 					}
 				});
 
+
 				canvas.add(cusRect);
 				canvas.add(txt);
 
+
 			}
 
-			function alignLeft () {
-				cusRect.set('textHAlign', 'left');
-				canvas.renderAll();
-			}
-
-			function alignCenter () {
-				cusRect.set('textHAlign', 'center');
-				canvas.renderAll();
-			}
-
-			function alignRight () {
-				cusRect.set('textHAlign', 'right');
-				canvas.renderAll();
-			}
-
-			function alignTop () {
-				cusRect.set('textVAlign', 'top');
-				canvas.renderAll();
-			}
-
-			function alignMiddle () {
-				cusRect.set('textVAlign', 'middle');
-				canvas.renderAll();
-			}
-
-			function alignBottom () {
-				cusRect.set('textVAlign', 'bottom');
-				canvas.renderAll();
+			function change(attr,val) {
+				var obj = canvas.getActiveObject();
+				if (obj) {
+					obj.set(attr, val);
+					canvas.renderAll();
+				}
 			}
 
 			window.onload = newCVS;
