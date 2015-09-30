@@ -80,7 +80,7 @@
 
     _reNewline : /\r?\n/,
 
-    _fontSizeMult : 1.13,
+    _fontSizeMult : 1,
 
     _fontSizeFraction: 0.25,
 
@@ -337,31 +337,36 @@
     },
 
     _renderTextFill: function(ctx, text) {
+
       // render each line
-      var lineHeights = 0;  // point to first line
+      var pointer = 0;  // point to first line
       for (var i=0, len=text.length; i<len; i++) {
-          // calculate height of line
-          var heightOfLine = text[i].height,
-              maxHeight = heightOfLine / this.lineHeight;
+
+          var line = text[i],
+              lineHeight = line.height,
+              charHeight = lineHeight / this.lineHeight,
+              // offset also cover lift up due to textBaseline is alphabetic
+              offset = (lineHeight - charHeight*(1+2*this._fontSizeFraction))/2;
+
           // call subroutine to render a line
           this._renderTextLine('fillText',
             ctx,
-            text[i],
+            line,
             this._getLeftOffset(),
-            this._getTopOffset() + lineHeights + maxHeight
+            this._getTopOffset() + pointer + offset + charHeight
           );
+
           // point to next line
-          lineHeights += heightOfLine;
+          pointer += lineHeight;
       } // end for i
     },
 
     _renderTextLine: function(method, ctx, line, left, top) {
-      // lift the line by quarter of fontSize
-      top -= this.fontSize * this._fontSizeFraction;
+
       var text = line.text;
       if ( (!this.styles || this.styles === null) &&
            (this.textHAlign != 'justify') ) {
-        // align
+        // horizontal align
         if (this.textHAlign !== 'left' && this.textHAlign !== 'justify') {
           left += this.textHAlign === 'center' ?
             (this.getWidth() / 2) :
@@ -370,7 +375,7 @@
         // not rich text format or align justify, draw a text line directly
         ctx[method](text[0].str, left, top);
       } else {
-        // rich text format or align justify requires draw each line
+        // partial text format or align justify requires to draw each line
         // calculate the position of char
         if (this.textHAlign !== 'left' && this.textHAlign !== 'justify') {
           left += this.textHAlign === 'center' ?
@@ -425,7 +430,15 @@
     _getHeightOfLine: function(ctx, line) {
       // ISSUE @18Sep2015 : rich text may have different style in each line
       // therefore line height must be count on each line
-      return this.fontSize * this._fontSizeMult * this.lineHeight;
+      var height = 0;
+      if ( Array.isArray(line) ) {
+        for (var i = 0, len = line.length; i < len; i++) {
+          height = (height < line[i].height) ? line[i].height : height;
+        }
+      } else {
+        height = this.fontSize * this._fontSizeMult * this.lineHeight;
+      }
+      return height;
     },
 
     _heighOfEmptyLine: function() {
@@ -435,7 +448,7 @@
     },
 
     _getHeightOfChars: function(ctx, chars, style) {
-      return this.fontSize * this._fontSizeMult * this.lineHeight;
+      return style.fontSize * this._fontSizeMult * this.lineHeight;
     },
 
     _getWidthOfChars: function(ctx, chars, style) {
@@ -446,11 +459,8 @@
     _getWidthOfLine: function(ctx, line) {
       // low performance solution
       // line width should be cached somehow
-      // ISSUE @18Sep2015 : rich text format cause wrong measurement, since each
-      // char may have each style. Measure need to accumulate every char ->
-      // may produce greate negative impact to performance
+      var width = 0;
       if ( Array.isArray(line) ) {
-        var width = 0;
         for (var i = 0, len = line.length; i < len; i++) {
           width += line[i].width;
         }
@@ -466,7 +476,11 @@
     _getHeightOfText: function(text) {
       // ISSUE @18Sep2015 : rich text may have different style in each line
       // therefore text height must be accumlate of each line
-      return this._getHeightOfLine() * text.length;
+      var height = 0;
+      for (var i = 0, len = text.length; i < len; i++) {
+          height += text[i].height;
+      }
+      return height;
     },
 
     getPadWidth: function() {
@@ -476,6 +490,7 @@
     // set proper style for ctx to draw
     _setTextStyles: function(ctx, style) {
       ctx.textBaseline = 'alphabetic';
+      //ctx.textBaseline = 'bottom';
       if (!this.skipTextAlign) {
         ctx.textAlign = this.textHAlign;
       }

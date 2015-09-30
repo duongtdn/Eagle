@@ -26,6 +26,9 @@
    - textOverflow support : https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow
    - toObject for seriallizing & fromObject for deseriallizing
    - gradient fill (toLive)
+   - analyse performance of recurssive call of _wrapLine vs. normal loop
+   - add text effects such as glow, shadow ... (refer power point)
+   - symphony (http://www.pearsonified.com/2011/12/golden-ratio-typography.php)
 
    ISSUE
    - scale down width to small cause carshed error : spliLine undefined
