@@ -21,25 +21,25 @@
 		<script type="text/javascript" src="js/shape/textbox.js"></script>
 		<script type="text/javascript" src="js/shape/basic.js"></script>
 
+		<script type="text/javascript" src="angular.min.js"></script>
+		<script type="text/javascript" src="app.js"></script>
+
 
 		<title>IB</title>
 	</head>
 
-	<body>
-		<div class="container">
+	<body ng-app="MyApp">
+		<div class="container" ng-controller="ViewModelCtrl">
 
 			<div class="shape-gen" style="margin-top:10px">
-				<button type="button" class="btn btn-default"onclick="genShape('Rect')"> Rect </button>
-				<button type="button" class="btn btn-default"onclick="genShape('Circle')"> Circle </button>
+				<button type="button" class="btn btn-default" ng-repeat = "shape in shapes"
+					ng-click="createShape(shape)" id="{{shape}}">
+					{{shape}}
+				</button>
 			</div>
 
 			<div class="toolbar control-align" style="margin-top:10px;">
-				<button type="button" class="btn btn-default" onclick="change('textHAlign','left')" > Left </button>
-				<button type="button" class="btn btn-default" onclick="change('textHAlign','center')" > Center </button>
-				<button type="button" class="btn btn-default" onclick="change('textHAlign','right')" > Right </button>
-				<button type="button" class="btn btn-default" onclick="change('textVAlign','top')" > Top </button>
-				<button type="button" class="btn btn-default" onclick="change('textVAlign','middle')" > Middle </button>
-				<button type="button" class="btn btn-default" onclick="change('textVAlign','bottom')" > Bottom </button>
+
 			</div>
 			<canvas id="cvs" style="margin-top:15px; margin-bottom:5px; border: 1px solid grey;"></canvas>
 
@@ -47,140 +47,6 @@
 
 		<script>
 
-			var canvas,
-			    cusRect,
-					shapes;
-
-			var prop = {
-				Rect : {
-					width: 200,
-					height: 150,
-					left : 10,
-					top : 10,
-					fill: '#eee',
-					stroke: "#000",
-					fontSize : 20,
-					textFill : '#555',
-					textHAlign : 'right',
-					textVAlign : 'middle',
-					padLeft : 10,
-					padRight : 10,
-					padTop : 10,
-					padBottom : 10,
-					wrap : 'auto',
-					trimSpaceWhenWrap : true,
-					text : 'Oh here is a new one\nand the second line\n third line is quite long hehe!!!'
-				},
-				Circle : {
-					left : 10,
-					top : 200,
-					radius : 100,
-					fill : '#ef0',
-					fontSize : 20,
-					textFill : '#222',
-					textHAlign : 'center',
-					textVAlign : 'middle',
-					padLeft : 10,
-					padRight : 10,
-					padTop : 10,
-					padBottom : 10,
-					wrap : 'auto',
-					trimSpaceWhenWrap : true,
-					text : 'A Circel a circle\nand the second line\n third line is quite long hehe!!!'
-				}
-			}
-
-			function genShape(type) {
-				var shape = new Eagle[type] ( prop[type] );
-				canvas.add (shape);
-			}
-
-			function newCVS() {
-
-				canvas = new fabric.Canvas('cvs',{
-					width : 800,
-					height : 500
-				});
-
-
-
-				cusRect = new Eagle.Textbox({
-					width: 250,
-					height: 150,
-					left : 100,
-					top : 100,
-					fill: '#ddd',
-					stroke: "#000",
-					fontSize : 20,
-					lineHeight : 1.16,
-					textFill : '#000',
-					//textAlign: 'middle center',
-					textHAlign : 'left',
-					textVAlign : 'bottom',
-					padLeft : 0,
-					padRight : 0,
-					padTop : 0,
-					padBottom : 	0	,
-					wrap : 'auto',
-					trimSpaceWhenWrap : true,
-					text : 'My custom_rect\nand Shy second line',
-					styles: {
-						0 : {
-							3 : {textFill : 'red', fontSize : 30},
-							4 : {textFill : 'red', fontSize : 30},
-							5 : {textFill : 'red', fontSize : 30},
-							6 : {textFill : 'red', fontSize : 30},
-							7 : {textFill : 'red', fontSize : 30},
-							8 : {textFill : 'red', fontSize : 30}
-						},
-						1 : {
-							4 : {textFill : 'green', fontSize : 50},
-							5 : {textFill : 'green', fontSize : 50},
-							6 : {textFill : 'green', fontSize : 50}
-						}
-					}
-				});
-
-
-				var txt = new fabric.IText('.My custom_rect\n.and She second line\n.third Shy\n.fourth  Shy', {
-					left: 350,
-					top: 110,
-					fill: '#000',
-				//	stroke: "#000",
-					fontSize : 20,
-					styles: {
-						0 : {
-							3 : {fill : 'red', fontSize : 30},
-							4 : {fill : 'red', fontSize : 30},
-							5 : {fill : 'red', fontSize : 30},
-							6 : {fill : 'red', fontSize : 30},
-							7 : {fill : 'red', fontSize : 30},
-							8 : {fill : 'red', fontSize : 30}
-						},
-						1 : {
-							4 : {textFill : 'green', fontSize : 50},
-							5 : {textFill : 'green', fontSize : 50},
-							6 : {textFill : 'green', fontSize : 50}
-						}
-					}
-				});
-
-
-				canvas.add(cusRect);
-				canvas.add(txt);
-
-
-			}
-
-			function change(attr,val) {
-				var obj = canvas.getActiveObject();
-				if (obj) {
-					obj.set(attr, val);
-					canvas.renderAll();
-				}
-			}
-
-			window.onload = newCVS;
 
 		</script>
 
