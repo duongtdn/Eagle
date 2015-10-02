@@ -7,6 +7,8 @@
 
   "use strict";
 
+  var slice = Array.prototype.slice;
+
   var FONTSIZE = 20,
       FONTWEIGHT = 'normal',    // bold, normal, 400, 600...
       FONTFAMILY = 'Times New Roman',
@@ -95,11 +97,15 @@
 
     // mixin methods
 
-    initialize : function(options) {
+    initialize : function() {
 
-      options || (options = {});
+      var options = slice.call(arguments);
+      options || (options = {});      
+      options.unshift('initialize');
+      console.log (options);
       // call super constructer
-      this.callSuper('initialize',options);
+      //this.callSuper('initialize',options);
+      this.callSuper.apply(this, options);
 
       // private property
       this._textLines = this.text.split(this._reNewline);
@@ -312,12 +318,12 @@
               height: height,
               width : 0,
               index : i + '.0',
-              text : {
+              text : [{
                 str : '',
                 style : null,
                 height : height,
                 width : 0
-              }
+              }]
             });
           } // end if
         } // end for i

@@ -38,10 +38,23 @@
 				</button>
 			</div>
 
-			<div class="toolbar control-align" style="margin-top:10px;">
+			<div class="row toolbar" style="margin-top:10px;">
+				<div class="col-sm-6">
+					<button type="button" class="btn btn-default" ng-click="alignText('textHAlign')">
+						Align Left
+					</button>
+					<button type="button" class="btn btn-default" ng-click="alignText('textVAlign')>
+						Align Top
+					</button>
+				</div>
+				<div class="col-sm-6">
 
+				</div>
 			</div>
+
 			<canvas id="cvs" style="margin-top:15px; margin-bottom:5px; border: 1px solid grey;"></canvas>
+
+
 
 		</div>
 

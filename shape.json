@@ -5,14 +5,14 @@
       "width" : 200,
       "height" : 150,
       "fill" : "#eee",
-      "stroke" : "#333",
+      "stroke" : "#333",      
       "text" : "A Rectangle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
     },
 
     "Circle" : {
       "radius" : 100,
       "fill" : "#ef0",
-      "text" : "A Rectangle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
+      "text" : "A Circle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
     },
 
     "Triangle" : {
@@ -20,14 +20,22 @@
       "height" : 150,
       "fill" : "#eee",
       "stroke" : "#333",
-      "text" : "A Rectangle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
+      "text" : "A Triangle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
     },
 
     "Polygon" : {
-      "point" : [10,10, 50,10, 50,0, 60,20, 50,40, 10,40, 10,10],
+      "points" : [
+        {"x" : 50,"y" : 50},
+        {"x" : 200,"y" : 50},
+        {"x" : 200,"y" : 20},
+        {"x" : 240,"y" : 60},
+        {"x" : 200,"y" : 100},
+        {"x" : 200,"y" : 70},
+        {"x" : 50,"y" : 70}
+      ],
       "fill" : "#eee",
       "stroke" : "#333",
-      "text" : "A Rectangle created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
+      "text" : "A polygon created by Eagle wrapper which support native text and wrapping\n\nPartial format is also added."
     }
 
   }
