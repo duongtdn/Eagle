@@ -100,9 +100,8 @@
     initialize : function() {
 
       var options = slice.call(arguments);
-      options || (options = {});      
+      options || (options = {});
       options.unshift('initialize');
-      console.log (options);
       // call super constructer
       //this.callSuper('initialize',options);
       this.callSuper.apply(this, options);

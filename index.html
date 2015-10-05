@@ -40,12 +40,20 @@
 
 			<div class="row toolbar" style="margin-top:10px;">
 				<div class="col-sm-6">
-					<button type="button" class="btn btn-default" ng-click="alignText('textHAlign')">
-						Align Left
-					</button>
-					<button type="button" class="btn btn-default" ng-click="alignText('textVAlign')>
-						Align Top
-					</button>
+					<div class="align-text" >
+						<button type="button" class="btn btn-default" ng-click="alignText('textHAlign')">
+							Align {{getAlign('textHAlign')}}
+						</button>
+						<button type="button" class="btn btn-default" ng-click="alignText('textVAlign')">
+							Align {{getAlign('textVAlign')}}
+						</button>
+					</div>
+					<div class="padding" ng-init="pads=['left','right','top','bottom']" >
+						<button type="button" class="btn btn-default" ng-repeat = "pad in pads"
+							ng-click="setPad(pad,10)">
+							{{pad}}
+						</button>
+					</div>
 				</div>
 				<div class="col-sm-6">
 
